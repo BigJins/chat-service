@@ -1,7 +1,7 @@
 package allmart.chatservice.adapter.webapi;
 
 import allmart.chatservice.adapter.webapi.dto.ChatRequest;
-import allmart.chatservice.application.ChatUseCase;
+import allmart.chatservice.application.provided.ChatUseCase;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

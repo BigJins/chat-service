@@ -3,8 +3,16 @@ spring:
     name: chat-service
   config:
     import:
-      - "optional:dotenv:.env"
       - "optional:configserver:${CONFIG_SERVER_URI:http://localhost:8888}"
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+    mcp:
+      server:
+        name: allmart-shopping-tools
+        version: "1.0.0"
+        # WebFlux SSE 트랜스포트: POST /mcp/message, GET /mcp/sse
+        # Claude.ai Desktop, Cursor 등 MCP 클라이언트가 연결
 
 server:
   port: 8094

@@ -1,6 +1,6 @@
 package allmart.chatservice.application.tool;
 
-import allmart.chatservice.adapter.client.OrderQueryServiceClient;
+import allmart.chatservice.adapter.client.OrderServiceClient;
 import allmart.chatservice.adapter.client.ProductServiceClient;
 import allmart.chatservice.adapter.client.SearchServiceClient;
 import allmart.chatservice.adapter.client.dto.ProductSearchResult;
@@ -23,7 +23,7 @@ import java.util.List;
 public class ChatToolExecutor {
 
     private final ProductServiceClient productServiceClient;
-    private final OrderQueryServiceClient orderQueryServiceClient;
+    private final OrderServiceClient orderServiceClient;
     private final SearchServiceClient searchServiceClient;
 
     /** 상품 단위/가격 조회 → Claude tool_result 문자열 반환 */
@@ -44,11 +44,11 @@ public class ChatToolExecutor {
 
     /**
      * 최근 주문 조회 → Claude tool_result 문자열 반환.
-     * order-query-service(MongoDB)에서 조회.
+     * order-service 내장 MongoDB에서 조회.
      */
     public String getRecentOrder(Long buyerId) {
         try {
-            RecentOrderInfo info = orderQueryServiceClient.getRecentOrder(buyerId);
+            RecentOrderInfo info = orderServiceClient.getRecentOrder(buyerId);
             return formatRecentOrder(info);
         } catch (Exception e) {
             log.warn("최근 주문 조회 실패: buyerId={}, reason={}", buyerId, e.getMessage());
@@ -107,17 +107,14 @@ public class ChatToolExecutor {
 
     /** 최근 주문 정보 → Claude tool_result 문자열. 배송지 + 상품 이력 포함 */
     private String formatRecentOrder(RecentOrderInfo info) {
-        if (info == null || info.deliverySnapshot() == null
-                || info.deliverySnapshot().roadAddress() == null
-                || info.deliverySnapshot().roadAddress().isBlank()) {
+        if (info == null || info.roadAddress() == null || info.roadAddress().isBlank()) {
             return "이전 주문 없음(첫 주문). 고객에게 우편번호·도로명주소·상세주소를 순서대로 입력받으세요.";
         }
-        RecentOrderInfo.DeliverySnapshot addr = info.deliverySnapshot();
-        StringBuilder sb = new StringBuilder("이전 배송지: ").append(addr.roadAddress());
-        if (addr.detailAddress() != null && !addr.detailAddress().isBlank()) {
-            sb.append(" ").append(addr.detailAddress());
+        StringBuilder sb = new StringBuilder("이전 배송지: ").append(info.roadAddress());
+        if (info.detailAddress() != null && !info.detailAddress().isBlank()) {
+            sb.append(" ").append(info.detailAddress());
         }
-        sb.append(" (").append(addr.zipCode()).append(")");
+        sb.append(" (").append(info.zipCode()).append(")");
 
         if (info.orderLines() != null && !info.orderLines().isEmpty()) {
             sb.append("\n이전 주문 상품: ");

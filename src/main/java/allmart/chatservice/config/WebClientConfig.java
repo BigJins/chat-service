@@ -1,6 +1,6 @@
 package allmart.chatservice.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,14 +25,6 @@ public class WebClientConfig {
     @Bean("productServiceRestClient")
     public RestClient productServiceRestClient(
             @Value("${product-service.url}") String url) {
-        return RestClient.builder()
-                .baseUrl(url)
-                .build();
-    }
-
-    @Bean("orderQueryServiceRestClient")
-    public RestClient orderQueryServiceRestClient(
-            @Value("${order-query-service.url}") String url) {
         return RestClient.builder()
                 .baseUrl(url)
                 .build();

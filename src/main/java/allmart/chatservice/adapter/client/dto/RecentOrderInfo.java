@@ -5,13 +5,16 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
 
 /**
- * order-query-service GET /api/orders/recent?buyerId={id} 응답 DTO.
+ * order-service GET /internal/orders/recent?buyerId={id} 응답 DTO.
+ * OrderDetailResponse flat 구조 수신 (zipCode/roadAddress/detailAddress 최상위 필드).
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record RecentOrderInfo(
-        String orderId,
+        Long orderId,
         List<OrderLine> orderLines,
-        DeliverySnapshot deliverySnapshot,
+        String zipCode,
+        String roadAddress,
+        String detailAddress,
         String createdAt
 ) {
 
@@ -19,12 +22,5 @@ public record RecentOrderInfo(
     public record OrderLine(
             String productNameSnapshot,
             int quantity
-    ) {}
-
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    public record DeliverySnapshot(
-            String zipCode,
-            String roadAddress,
-            String detailAddress
     ) {}
 }

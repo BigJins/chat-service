@@ -2,25 +2,29 @@ package allmart.chatservice.adapter.client;
 
 import allmart.chatservice.adapter.client.dto.OrderConfirmData;
 import allmart.chatservice.adapter.client.dto.OrderCreateResult;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import allmart.chatservice.adapter.client.dto.RecentOrderInfo;
+import allmart.chatservice.application.required.OrderCreationPort;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
 /**
- * order-service POST /api/orders 호출 클라이언트.
- * ORDER_CONFIRM 데이터 → order-service 요청 포맷으로 변환.
+ * order-service 호출 클라이언트.
+ * - POST /api/orders — 주문 생성
+ * - GET /internal/orders/recent — 최근 주문 조회 (배송지 재사용)
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OrderServiceClient {
+public class OrderServiceClient implements OrderCreationPort {
 
     @Qualifier("orderServiceRestClient")
     private final RestClient restClient;
@@ -46,11 +50,21 @@ public class OrderServiceClient {
         }
     }
 
+    public RecentOrderInfo getRecentOrder(Long buyerId) {
+        log.debug("최근 주문 조회 요청: buyerId={}", buyerId);
+        return restClient.get()
+                .uri("/internal/orders/recent?buyerId={buyerId}", buyerId)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (req, res) ->
+                        log.debug("최근 주문 없음({}): buyerId={}", res.getStatusCode().value(), buyerId))
+                .body(RecentOrderInfo.class);
+    }
+
     /** order-service GlobalExceptionHandler 응답에서 message 필드 추출 */
     private String extractMessage(RestClientResponseException e) {
         try {
             String body = e.getResponseBodyAsString();
-            com.fasterxml.jackson.databind.JsonNode node = objectMapper.readTree(body);
+            tools.jackson.databind.JsonNode node = objectMapper.readTree(body);
             if (node.has("message")) return node.get("message").asText();
         } catch (Exception ignored) {
             // 파싱 실패 시 상태 코드 기반 기본 메시지 사용

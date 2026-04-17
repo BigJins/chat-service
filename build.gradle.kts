@@ -1,6 +1,6 @@
 plugins {
     java
-    id("org.springframework.boot") version "3.4.5"
+    id("org.springframework.boot") version "4.0.2"
     id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -23,10 +23,11 @@ configurations {
 repositories {
     mavenCentral()
     maven { url = uri("https://repo.spring.io/milestone") }
+    maven { url = uri("https://repo.spring.io/snapshot") }
 }
 
-extra["springCloudVersion"] = "2024.0.1"
-extra["springAiVersion"] = "1.0.0"
+extra["springCloudVersion"] = "2025.1.0"
+extra["springAiVersion"] = "2.0.0-M2"
 
 dependencies {
     // WebFlux — SSE 스트리밍
@@ -39,6 +40,10 @@ dependencies {
     // Spring AI — Anthropic (Claude) + Tool Calling
     implementation("org.springframework.ai:spring-ai-starter-model-anthropic")
 
+    // Spring AI — MCP 서버 (WebFlux SSE 트랜스포트)
+    // Claude.ai Desktop 등 MCP 클라이언트가 allmart 쇼핑 툴에 직접 연결
+    implementation("org.springframework.ai:spring-ai-starter-mcp-server-webflux")
+
     // Monitoring
     runtimeOnly("io.micrometer:micrometer-registry-prometheus")
     implementation("com.github.loki4j:loki-logback-appender:1.5.2")
@@ -46,8 +51,7 @@ dependencies {
     // 세션 TTL 만료 (30분 비활성 시 자동 제거)
     implementation("com.google.guava:guava:33.4.8-jre")
 
-    // .env 파일 자동 로딩 (로컬 개발용 API 키 주입)
-    implementation("me.paulschwarz:spring-dotenv:4.0.0")
+    // .env 로딩은 DotEnvPostProcessor (allmart.chatservice.config) 가 담당 — spring-dotenv 제거 (Spring Boot 4.x 미호환)
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")

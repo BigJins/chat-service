@@ -1,14 +1,10 @@
 package allmart.chatservice.adapter.client.dto;
 
 /**
- * auth-service GET /auth/customers/addresses 응답 DTO.
- * auth-service SavedAddressResponse와 필드 일치.
+ * @deprecated AuthServiceClient 내부 SavedAddressResponse record로 대체됨.
+ *             AddressPort.getDefaultAddress() 가 DeliveryAddress를 직접 반환.
  */
+@Deprecated
 public record SavedAddressInfo(
-        Long id,
-        String zipCode,
-        String roadAddress,
-        String detailAddress,
-        String label,
-        boolean isDefault
-) {}
+        String id, String zipCode, String roadAddress,
+        String detailAddress, String label, boolean isDefault) {}

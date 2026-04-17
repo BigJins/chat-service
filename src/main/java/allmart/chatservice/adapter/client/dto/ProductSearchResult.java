@@ -1,7 +1,7 @@
 package allmart.chatservice.adapter.client.dto;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import tools.jackson.databind.annotation.JsonSerialize;
+import tools.jackson.databind.ser.std.ToStringSerializer;
 
 /**
  * search-service GET /internal/search/products/rag 응답 DTO.

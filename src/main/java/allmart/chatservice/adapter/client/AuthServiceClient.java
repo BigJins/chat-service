@@ -1,54 +1,63 @@
 package allmart.chatservice.adapter.client;
 
-import allmart.chatservice.adapter.client.dto.SavedAddressInfo;
+import allmart.chatservice.application.required.AddressPort;
+import allmart.chatservice.domain.session.DeliveryAddress;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.stereotype.Component;
 import org.springframework.http.MediaType;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
- * auth-service API 클라이언트.
- * GET  /auth/customers/addresses — 저장된 배송지 목록 조회 (isDefault 필터로 기본 주소 취득)
- * POST /auth/customers/addresses — 채팅 주문 시 확정된 배송지를 기본 주소로 저장
+ * auth-service API 클라이언트. AddressPort 구현.
+ * GET  /auth/customers/addresses — 기본 배송지 조회
+ * POST /auth/customers/addresses — 배송지 저장
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class AuthServiceClient {
+public class AuthServiceClient implements AddressPort {
 
     @Qualifier("authServiceRestClient")
     private final RestClient restClient;
 
     /**
-     * 소비자의 기본 배송지(isDefault=true) 반환.
-     * 없으면 null.
+     * isDefault=true 배송지를 DeliveryAddress로 변환해 반환.
+     * 없거나 API 실패 시 Optional.empty().
      */
-    public SavedAddressInfo getDefaultAddress(Long buyerId) {
-        log.debug("기본 배송지 조회 요청: buyerId={}", buyerId);
-        List<SavedAddressInfo> addresses = restClient.get()
-                .uri("/auth/customers/addresses")
-                .header("X-User-Id", buyerId.toString())
-                .retrieve()
-                .body(new ParameterizedTypeReference<>() {});
+    @Override
+    public Optional<DeliveryAddress> getDefaultAddress(Long buyerId) {
+        try {
+            List<SavedAddressResponse> addresses = restClient.get()
+                    .uri("/auth/customers/addresses")
+                    .header("X-User-Id", buyerId.toString())
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {});
 
-        if (addresses == null || addresses.isEmpty()) return null;
+            if (addresses == null) return Optional.empty();
 
-        return addresses.stream()
-                .filter(SavedAddressInfo::isDefault)
-                .findFirst()
-                .orElse(null);
+            return addresses.stream()
+                    .filter(SavedAddressResponse::isDefault)
+                    .filter(a -> a.roadAddress() != null && !a.roadAddress().isBlank())
+                    .findFirst()
+                    .map(a -> new DeliveryAddress(a.zipCode(), a.roadAddress(), a.detailAddress(), null));
+        } catch (Exception e) {
+            log.warn("기본 배송지 조회 실패(무시): buyerId={}, reason={}", buyerId, e.getMessage());
+            return Optional.empty();
+        }
     }
 
     /**
      * 채팅 주문에서 확정된 배송지를 auth-service에 기본 주소로 저장.
      * 실패해도 채팅 흐름에 영향 없음 (best-effort).
      */
+    @Override
     public void saveDefaultAddress(Long buyerId, String zipCode, String roadAddress, String detailAddress) {
         try {
             restClient.post()
@@ -68,4 +77,9 @@ public class AuthServiceClient {
             log.warn("배송지 auth-service 저장 실패(무시): buyerId={}, reason={}", buyerId, e.getMessage());
         }
     }
+
+    /** auth-service 응답 내부 DTO — SavedAddressInfo를 대체 */
+    private record SavedAddressResponse(
+            String id, String zipCode, String roadAddress,
+            String detailAddress, String label, boolean isDefault) {}
 }
